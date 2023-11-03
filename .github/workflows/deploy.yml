@@ -1,0 +1,34 @@
+name: Deploy New Relic Agent to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up New Relic
+      run: |
+        curl -L https://download.newrelic.com/install/newrelic.sh | bash
+        NR_INSTALL_KEY=ae4f67198be65ab783366eb38e896e27FFFFNRAL nrsysmond-config --set license_key=$NR_INSTALL_KEY
+        systemctl enable newrelic-sysmond
+        systemctl start newrelic-sysmond
+
+    - name: SSH into Azure VM
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ${{ secrets.AZURE_VM_IP }}
+        username: ${{ secrets.AZURE_VM_USERNAME }}
+        key: ${{ secrets.AZURE_SSH_KEY }}
+        port: 22
+        script: |
+          # Execute commands on the Azure VM, e.g., YOUR_SCRIPT_COMMAND
+          sudo apt update
+          sudo apt upgrade -y
+
